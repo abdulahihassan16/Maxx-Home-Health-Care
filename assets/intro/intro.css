@@ -1,0 +1,54 @@
+/* First-visit logo intro. Inert unless <html> has .intro-on, which only the
+   inline head script adds, so without JavaScript the overlay never exists. */
+
+.intro { display: none; }
+
+.intro-on { overflow: hidden; }
+
+.intro-on .intro {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  background: #FBF2EC; /* sampled from the video: must match exactly */
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--intro-exit, 600ms) cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.intro__media {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: block;
+  width: min(80vw, 1280px);
+  max-width: none;
+  height: auto;
+  max-height: 80vh;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #FBF2EC;
+  transition:
+    transform var(--intro-exit, 600ms) cubic-bezier(0.65, 0, 0.35, 1),
+    opacity var(--intro-exit, 600ms) cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Portrait: full width so the logo stays readable on phones. */
+@media (orientation: portrait) {
+  .intro__media { width: 130vw; max-height: none; }
+}
+
+.intro.is-exiting { clip-path: inset(0 0 100% 0); }
+
+.intro.is-exiting .intro__media {
+  transform: translateY(calc(var(--intro-rise, 48px) * -1));
+  opacity: 0;
+}
+
+.intro.is-fading { opacity: 0; }
+
+/* Reduced motion: never flash the circular poster; JS swaps in the end frame. */
+@media (prefers-reduced-motion: reduce) {
+  .intro video { visibility: hidden; }
+}

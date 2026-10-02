@@ -1,0 +1,6 @@
+.claude/
+.impeccable/
+_v1-backup/
+*.log
+Thumbs.db
+.DS_Store
