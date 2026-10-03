@@ -3678,3 +3678,8 @@ blockquote.pull--center::before {
 .footer__bottom p {
   margin: 0;
 }
+
+/* Our Story photograph keeps its own wide proportions. */
+.story-photo {
+  aspect-ratio: 2 / 1;
+}
