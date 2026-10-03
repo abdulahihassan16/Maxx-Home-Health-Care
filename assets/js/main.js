@@ -876,8 +876,7 @@
       if (!FORM_ENDPOINT) {
         if (formError) {
           formError.textContent =
-            'This form is not connected yet. Set FORM_ENDPOINT in assets/js/main.js before launch. ' +
-            'In the meantime, please call 507-884-8277.';
+            'Online messages aren’t available right now. Please call us at 507-884-8277 and we’ll take care of you.';
         }
         return;
       }

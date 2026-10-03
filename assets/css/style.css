@@ -3691,3 +3691,59 @@ blockquote.pull--center::before {
   object-fit: cover;
   filter: saturate(0.94) contrast(1.02) sepia(0.05);
 }
+
+/* --------------------------------------------------------------------------
+   38. Reading comfort
+   -------------------------------------------------------------------------- */
+
+/* A short statement that carries the section, set as the lead line. */
+.lede--ink {
+  color: var(--ink);
+}
+
+.values {
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 599px) {
+  /* Phones: slightly smaller long-form text, more air between paragraphs and
+     around headings, so a section reads as a few short blocks. */
+  .lede,
+  .prose-lg,
+  .direct__body,
+  .page-hero .lede {
+    font-size: 1.125rem;
+    line-height: 1.65;
+  }
+
+  p + p {
+    margin-top: 1.25em;
+  }
+
+  .band {
+    padding-block: 3.5rem;
+  }
+
+  .band--tight {
+    padding-block: 3rem;
+  }
+
+  .page-hero {
+    padding-block: 2.5rem 2.25rem;
+  }
+
+  h2 + .lede,
+  h2 + p,
+  h2 + .prose {
+    margin-top: 0.875rem;
+  }
+
+  .svc-entry {
+    padding-block: 1.75rem;
+    gap: 0.75rem;
+  }
+
+  .faq__answer {
+    font-size: 1.0625rem;
+  }
+}

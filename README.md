@@ -109,7 +109,7 @@ the skip link over the logo for every visitor; that was removed.
 
 **Must do**
 
-- [ ] **Set `INTRO_EVERY_LOAD` to `false`** in `index.html`.
+- [x] `INTRO_EVERY_LOAD` is `false`: the intro plays once per visit.
 - [ ] **Connect the forms.** Set `FORM_ENDPOINT` at the top of
       `assets/js/main.js`. It receives both the contact form and the job
       application as `multipart/form-data` with file uploads; a hidden
@@ -119,8 +119,8 @@ the skip link over the logo for every visitor; that was removed.
 - [ ] **Turn on compression at the host** (gzip or Brotli for HTML, CSS, JS,
       SVG). Every normal host does this by default. It is what keeps mobile
       LCP under 2.5s; see the results below.
-- [ ] **Drop in the three logo files** (see below) and the favicon set.
-- [ ] **Real photographs** in the slots (below).
+- [x] Logo, favicon, app icons, and the link-preview image (`og-image.jpg`) are in.
+- [x] No photo placeholders remain on any page.
 - [ ] **Clear the `[VERIFY]` flags** (list below), then add
       `class="verify-off"` to `<body>` to hide any that remain.
 - [ ] **Confirm the domain and URL style.** Canonicals and the sitemap use
@@ -177,10 +177,11 @@ and what they are doing.
 ## Content source of truth
 
 All business information comes from the current site, maxxhomehealthcarellc.com
-(Home, About, CFSS, Home Care Services, Insurance), checked sentence by
-sentence with a script: 96 of its 110 sentences and list items appear word
-for word; the other 14 are formatting only (punctuation, "PHONE NUMBER :"
-labels, copyright year 2026 instead of 2025).
+(Home, About, CFSS, Home Care Services, Insurance). It was first carried over
+sentence by sentence and checked with a script; the long paragraphs were then
+shortened on purpose so they read easily on a phone. The facts are unchanged
+(services, insurance plans, contact details, hours, CFSS details, testimonials),
+but the wording is no longer word for word with the old site.
 
 - **Insurance:** UCare, Blue Cross Blue Shield of Minnesota, Medica, South
   Country Health Alliance. (The current site shows these as logos only.)
