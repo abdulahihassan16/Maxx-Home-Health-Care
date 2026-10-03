@@ -192,8 +192,9 @@ labels, copyright year 2026 instead of 2025).
   homepage and "24-Hour Emergency Services" on its services page. This build
   uses "Support" throughout.
 - Content that is **not** on the current site (careers page, FAQs, CFSS
-  eligibility and how-to-start, screening and trust claims, team) is flagged
-  `[VERIFY]` on the page.
+  eligibility and how-to-start, screening and trust claims, team) still needs
+  the client's sign-off. The on-page `[VERIFY]` flags were removed for the
+  client preview; the table below is now the only list of what to confirm.
 
 ## The `[VERIFY]` list
 

@@ -3636,3 +3636,45 @@ blockquote.pull--center::before {
 .file-list button:hover {
   border-color: var(--ink);
 }
+
+/* Each plan opens the insurer's own site. */
+.plan__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.plan__link svg {
+  flex: none;
+  width: 1.375rem;
+  height: 1.375rem;
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: translate 250ms var(--ease-out-quart);
+}
+
+.plan__link:hover .plan__name {
+  color: var(--blue-deep);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+}
+
+.plan__link:hover svg,
+.plan__link:focus-visible svg {
+  translate: 4px 0;
+}
+
+.footer__credit strong {
+  color: var(--paper);
+}
+
+.footer__bottom p {
+  margin: 0;
+}
