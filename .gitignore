@@ -4,3 +4,6 @@ _v1-backup/
 *.log
 Thumbs.db
 .DS_Store
+.dev.vars
+.wrangler/
+node_modules/

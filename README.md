@@ -110,12 +110,7 @@ the skip link over the logo for every visitor; that was removed.
 **Must do**
 
 - [x] `INTRO_EVERY_LOAD` is `false`: the intro plays once per visit.
-- [ ] **Connect the forms.** Set `FORM_ENDPOINT` at the top of
-      `assets/js/main.js`. It receives both the contact form and the job
-      application as `multipart/form-data` with file uploads; a hidden
-      `form_name` field says which. Until it is set, both forms refuse to
-      submit and say so plainly.
-- [ ] **reCAPTCHA v3** (optional): `RECAPTCHA_SITE_KEY` in the same file.
+- [ ] **Switch on form emails**: follow "Form emails → One-time setup" below.
 - [ ] **Turn on compression at the host** (gzip or Brotli for HTML, CSS, JS,
       SVG). Every normal host does this by default. It is what keeps mobile
       LCP under 2.5s; see the results below.
@@ -214,6 +209,92 @@ Every one is flagged on the page in amber. Do not publish an unverified claim.
 | Careers | The four benefits, current open roles, the five hiring steps |
 | Footer | Fax `1-213-867-5203` is a Los Angeles area code; social profiles; "Website by Rocks Media" approval |
 | Privacy, HIPAA, Accessibility | Legal review; the full HIPAA notice text; date of last accessibility review |
+
+---
+
+## Form emails
+
+Every form posts to a Cloudflare Pages Function (`functions/api/submit.js`).
+It checks the submission, then emails it to the office through **Resend**:
+
+- **From** `Maxx Home Health Care Website <website@maxxhomehealthcarellc.com>`
+- **To** `maxxhomehealthcare@gmail.com`
+- **Reply-To** the person who filled in the form, so hitting Reply in Gmail answers them.
+
+Order of checks: request size, hidden honeypot field, rate limit (5 per
+address per 10 minutes), Cloudflare Turnstile, then every field validated
+again on the server. The visitor sees "Thank you" only after Resend accepts
+the email; otherwise they get a friendly error with 507-884-8277.
+
+| Form | Subject line | Heading |
+|---|---|---|
+| Care request | New care request: [Name] ([Service]) | Someone is requesting care |
+| Referral | New referral from [Name, Organization] | New client referral |
+| Job application | New job application: [Name] for [Position] | New job application |
+| General question | New message from [Name] | New message from your website |
+
+Templates: `functions/_shared/email.js`. Field rules: `functions/_shared/forms.js`.
+
+### One-time setup (in this order)
+
+**1. Resend.** Create an account, add the domain `maxxhomehealthcarellc.com`
+(US region), and create an API key with "Sending access".
+
+**2. DNS at GoDaddy** (the domain's DNS lives at GoDaddy, ns71/ns72.domaincontrol.com).
+Add exactly what Resend's domain page shows. For the US region that is:
+
+| Type | Name (host) | Value | Priority |
+|---|---|---|---|
+| TXT | `resend._domainkey` | the DKIM key Resend shows (`p=MIGf...`) | |
+| MX | `send` | `feedback-smtp.us-east-1.amazonses.com` | 10 |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | |
+
+Do **not** change anything else:
+
+- **MX on the root** points to Microsoft 365 (`...mail.protection.outlook.com`). Leave it.
+- **SPF on the root** (`v=spf1 include:secureserver.net -all`) stays as is.
+  Resend sends with its own `send.` return path, so the root SPF doesn't need it.
+- **DMARC already exists** (`_dmarc`: `p=reject; adkim=r; aspf=r`). Do not add
+  a second one. Resend's mail passes it through DKIM. Because the policy is
+  `reject`, inboxes refuse website emails until Resend shows the domain as
+  **Verified**, so verify before switching the forms on.
+
+**3. Turnstile.** Cloudflare dashboard → Turnstile → Add widget. Hostnames:
+`maxxhomehealthcarellc.com` and the `*.pages.dev` preview address. Mode: Managed.
+Put the **site key** in `assets/js/main.js` (`TURNSTILE_SITE_KEY`); the **secret**
+goes in step 5.
+
+**4. Rate-limit storage.** Cloudflare → Storage & Databases → KV → Create
+namespace (`maxx-forms-rate-limit`). Then Pages project → Settings → Bindings →
+KV namespace, variable name `RATE_LIMIT`.
+
+**5. Variables.** Pages project → Settings → Variables and Secrets (Production):
+
+| Name | Type | Value |
+|---|---|---|
+| `RESEND_API_KEY` | Secret | the Resend API key |
+| `TURNSTILE_SECRET_KEY` | Secret | the Turnstile secret |
+| `MAIL_TO` | Text | `maxxhomehealthcare@gmail.com` |
+| `MAIL_FROM` | Text | `Maxx Home Health Care Website <website@maxxhomehealthcarellc.com>` |
+| `SITE_URL` | Text | the live address, e.g. `https://maxxhomehealthcarellc.com` (the email logo loads from here) |
+
+**6. Redeploy** (any push to `main`), then send one test of each form.
+
+### Testing locally
+
+`.dev.vars` (git-ignored) holds local values, using Cloudflare's always-pass
+Turnstile test secret and `RESEND_API_URL` pointed at a local stand-in:
+
+```bash
+npx wrangler pages dev . --port 8788 --kv RATE_LIMIT
+```
+
+### Health information
+
+Care requests and referrals can contain health details and medical paperwork.
+Resend and a personal Gmail inbox are not covered by a HIPAA Business
+Associate Agreement. Moving the inbox to Google Workspace (with Google's BAA)
+or a HIPAA-covered form service is worth raising with the client.
 
 ---
 

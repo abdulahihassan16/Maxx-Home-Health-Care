@@ -12,16 +12,13 @@
 
   /* ------------------------------------------------------------------------
      CONFIGURE BEFORE LAUNCH
-     FORM_ENDPOINT receives every form on the site (contact and careers) as
-     multipart/form-data, including file uploads. A hidden form_name field
-     says which form sent it. Until it is set, forms refuse to submit and say
-     so plainly rather than faking success.
+     Every form posts to the Cloudflare Pages Function in functions/api/,
+     which checks the submission and emails it to the office.
+     TURNSTILE_SITE_KEY is the public site key from Cloudflare Turnstile
+     (the matching secret is set on the server, never here).
      ------------------------------------------------------------------------ */
-  var FORM_ENDPOINT = '';
-
-  /* reCAPTCHA v3 site key. Leave empty to skip. Loads only after cookies are
-     accepted and only on first interaction with a form. */
-  var RECAPTCHA_SITE_KEY = '';
+  var FORM_ENDPOINT = '/api/submit';
+  var TURNSTILE_SITE_KEY = window.MAXX_TURNSTILE_SITE_KEY || '';
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) {
@@ -590,8 +587,6 @@
      10. Cookie notice — nothing non-essential loads until accepted
      ------------------------------------------------------------------------ */
 
-  var cookiesAccepted = false;
-
   (function cookies() {
     var box = $('#cookie');
     if (!box) return;
@@ -599,16 +594,11 @@
     var stored = null;
     try { stored = window.localStorage.getItem('maxx-cookies'); } catch (e) {}
 
-    if (stored === 'all') {
-      cookiesAccepted = true;
-      return;
-    }
-    if (stored === 'essential') return;
+    if (stored === 'all' || stored === 'essential') return;
 
     box.hidden = false;
 
     var decide = function (value) {
-      cookiesAccepted = value === 'all';
       box.hidden = true;
       try { window.localStorage.setItem('maxx-cookies', value); } catch (e) {}
     };
@@ -734,7 +724,7 @@
 
   /* ------------------------------------------------------------------------
      13. Contact form: preselect from the link that brought the visitor here
-     ?type=care | referral | job   and   ?service=<id>
+     ?type=care | referral | general   and   ?service=<id>
      ------------------------------------------------------------------------ */
 
   (function prefill() {
@@ -742,11 +732,6 @@
     if (!form || !window.URLSearchParams) return;
 
     var params = new URLSearchParams(window.location.search);
-    var TYPES = {
-      care: 'Requesting care',
-      referral: 'Referring a client',
-      job: 'Applying for a job'
-    };
     var SERVICES = {
       'skilled-nursing': 'Skilled Nursing',
       'private-duty-nursing': 'Private Duty Nursing',
@@ -757,26 +742,21 @@
       'cfss': 'Community First Services and Supports (CFSS)'
     };
 
-    var type = TYPES[params.get('type')];
-    if (type) {
+    var type = params.get('type');
+    if (['care', 'referral', 'general'].indexOf(type) !== -1) {
       $$('input[name="topic"]', form).forEach(function (input) {
         input.checked = input.value === type;
       });
     }
 
     var service = SERVICES[params.get('service')];
-    var message = form.elements.message;
-    if (service && message && !message.value) {
-      message.value = "I'd like to ask about " + service + '.\n\n';
-    }
-    var serviceField = form.elements.service;
-    if (service && serviceField) serviceField.value = service;
+    if (service && form.elements.service) form.elements.service.value = service;
   }());
 
   /* ------------------------------------------------------------------------
      14. Forms — one handler for every form marked data-form
-     Validation runs on blur, never on each keystroke. Success appears
-     without a page reload, and never for a message nobody received.
+     Validation runs on blur, never on each keystroke. The server checks
+     everything again. Success appears only after the email has been sent.
      ------------------------------------------------------------------------ */
 
   var rules = {
@@ -797,60 +777,90 @@
 
   function ruleFor(input) {
     if (rules[input.name]) return rules[input.name];
-    if (input.tagName === 'SELECT' && input.required) {
+    if (!input.required) return null;
+    if (input.tagName === 'SELECT') {
       return function (v) { return v ? '' : 'Please choose an option.'; };
     }
-    if (input.type === 'checkbox' && input.required) {
+    if (input.type === 'checkbox') {
       return function () {
         return input.checked ? '' : (input.dataset.message || 'Please tick this box to continue.');
       };
     }
+    if (input.type === 'text' || input.tagName === 'TEXTAREA') {
+      return function (v) { return v.trim() ? '' : 'Please fill this in.'; };
+    }
     return null;
+  }
+
+  function showError(input, message) {
+    var out = $('#' + input.id + '-error');
+    if (message) {
+      input.setAttribute('aria-invalid', 'true');
+      if (out) out.textContent = message;
+    } else {
+      input.removeAttribute('aria-invalid');
+      if (out) out.textContent = '';
+    }
   }
 
   function validateField(input) {
     var rule = ruleFor(input);
-    if (!rule) return true;
-
+    if (!rule || input.disabled) return true;
     var message = rule(input.value);
-    var out = $('#' + input.id + '-error');
+    showError(input, message);
+    return !message;
+  }
 
-    if (message) {
-      input.setAttribute('aria-invalid', 'true');
-      if (out) out.textContent = message;
-      return false;
+  /* Cloudflare Turnstile, loaded on first interaction with a form. The site
+     key is public; the secret lives only on the server. */
+  var turnstileReady = null;
+  function loadTurnstile() {
+    if (!turnstileReady) {
+      turnstileReady = new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        s.async = true;
+        s.onload = function () { resolve(window.turnstile); };
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
     }
-
-    input.removeAttribute('aria-invalid');
-    if (out) out.textContent = '';
-    return true;
+    return turnstileReady;
   }
 
   $$('form[data-form]').forEach(function (form) {
     var success = document.getElementById(form.dataset.success);
     var formError = $('[data-form-error]', form);
     var submitBtn = $('[type="submit"]', form);
+    var box = $('[data-turnstile]', form);
 
-    /* Segmented topic control, where present. */
+    /* Topic switch: show the fields that type of message needs, and take the
+       others out of the form entirely so they are neither checked nor sent. */
     var topics = $$('input[name="topic"]', form);
-    var jobsHint = $('#jobs-hint', form);
     function syncTopic() {
+      var current = (topics.filter(function (i) { return i.checked; })[0] || {}).value;
       topics.forEach(function (input) {
         input.closest('label').classList.toggle('is-selected', input.checked);
       });
-      var applying = topics.some(function (i) {
-        return i.checked && i.value === 'Applying for a job';
+      if (!current) return;
+      $$('[data-show]', form).forEach(function (el) {
+        var on = el.dataset.show.split(' ').indexOf(current) !== -1;
+        el.hidden = !on;
+        $$('input, select, textarea', el).forEach(function (f) {
+          f.disabled = !on;
+          if (!on) showError(f, '');
+        });
       });
-      if (jobsHint) jobsHint.hidden = !applying;
+      $$('[data-required-for]', form).forEach(function (f) {
+        f.required = f.dataset.requiredFor.split(' ').indexOf(current) !== -1;
+        if (!f.required) showError(f, '');
+      });
     }
     topics.forEach(function (input) { input.addEventListener('change', syncTopic); });
     syncTopic();
 
-    var fields = $$('input, select, textarea', form).filter(function (el) {
-      return ruleFor(el);
-    });
-
-    fields.forEach(function (input) {
+    var controls = $$('input, select, textarea', form);
+    controls.forEach(function (input) {
       var evt = input.type === 'checkbox' || input.tagName === 'SELECT' ? 'change' : 'blur';
       input.addEventListener(evt, function () { validateField(input); });
       input.addEventListener('input', function () {
@@ -858,26 +868,50 @@
       });
     });
 
+    /* Spam check: render on first interaction, hand back a token on submit. */
+    var widget = null;
+    var token = '';
+    var waiting = [];
+    function settle(value) {
+      token = value;
+      waiting.splice(0).forEach(function (fn) { fn(value); });
+    }
+    function startTurnstile() {
+      if (widget !== null || !box || !TURNSTILE_SITE_KEY) return;
+      widget = false;
+      loadTurnstile().then(function (ts) {
+        widget = ts.render(box, {
+          sitekey: TURNSTILE_SITE_KEY,
+          appearance: 'interaction-only',
+          callback: settle,
+          'expired-callback': function () { token = ''; },
+          'error-callback': function () { settle(''); }
+        });
+      }).catch(function () { settle(''); });
+    }
+    function getToken() {
+      if (token) return Promise.resolve(token);
+      startTurnstile();
+      return new Promise(function (resolve) {
+        waiting.push(resolve);
+        window.setTimeout(function () { resolve(token); }, 15000);
+      });
+    }
+    form.addEventListener('focusin', startTurnstile);
+
+    var SORRY = 'We couldn’t send your message just now. Please call us at 507-884-8277 and we’ll take care of you.';
+
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       if (formError) formError.textContent = '';
 
       var firstBad = null;
-      fields.forEach(function (input) {
+      controls.forEach(function (input) {
         if (!validateField(input) && !firstBad) firstBad = input;
       });
-
       if (firstBad) {
         if (formError) formError.textContent = 'Please check the highlighted fields above.';
         firstBad.focus();
-        return;
-      }
-
-      if (!FORM_ENDPOINT) {
-        if (formError) {
-          formError.textContent =
-            'Online messages aren’t available right now. Please call us at 507-884-8277 and we’ll take care of you.';
-        }
         return;
       }
 
@@ -885,38 +919,47 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Sending…';
 
-      window.fetch(FORM_ENDPOINT, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { Accept: 'application/json' }
-      }).then(function (res) {
-        if (!res.ok) throw new Error('Request failed: ' + res.status);
-        form.hidden = true;
-        if (success) {
-          success.hidden = false;
-          success.focus();
-        }
-      }).catch(function () {
+      function fail(message) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = original;
-        if (formError) {
-          formError.textContent =
-            'Something went wrong sending this. Please call us at 507-884-8277 and we will pick it up from there.';
-        }
-      });
-    });
+        if (formError) formError.textContent = message || SORRY;
+        /* A Turnstile token works once; get a fresh one for the next try. */
+        token = '';
+        if (widget && window.turnstile) window.turnstile.reset(widget);
+      }
 
-    if (RECAPTCHA_SITE_KEY) {
-      var loaded = false;
-      form.addEventListener('focusin', function () {
-        if (loaded || !cookiesAccepted) return;
-        loaded = true;
-        var s = document.createElement('script');
-        s.src = 'https://www.google.com/recaptcha/api.js?render=' + RECAPTCHA_SITE_KEY;
-        s.async = true;
-        document.head.appendChild(s);
-      });
-    }
+      getToken().then(function (t) {
+        if (!t) { fail(); return null; }
+        var body = new FormData(form);
+        body.set('cf-turnstile-response', t);
+        return window.fetch(FORM_ENDPOINT, {
+          method: 'POST',
+          body: body,
+          headers: { Accept: 'application/json' }
+        }).then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            if (res.ok && data.ok) {
+              form.hidden = true;
+              if (success) {
+                success.hidden = false;
+                success.focus();
+              }
+              return;
+            }
+            var first = null;
+            Object.keys(data.fields || {}).forEach(function (name) {
+              var input = form.elements[name];
+              if (input && input.id) {
+                showError(input, data.fields[name]);
+                if (!first) first = input;
+              }
+            });
+            fail(data.error);
+            if (first) first.focus();
+          });
+        });
+      }).catch(function () { fail(); });
+    });
   });
 
 }());

@@ -38,7 +38,7 @@
 }());
 </script>
 
-<link rel="stylesheet" href="assets/css/style.css?v=1790988308">
+<link rel="stylesheet" href="assets/css/style.css?v=1791241736">
 
 <script type="application/ld+json">
 {
@@ -133,7 +133,7 @@
   <div class="shell header__inner">
 
     <a class="brand" href="index.html" aria-label="Maxx Home Healthcare, home page">
-      <img src="assets/img/logo.webp?v=1790988308" alt="Maxx Home Health Care" width="625" height="168">
+      <img src="assets/img/logo.webp?v=1791241736" alt="Maxx Home Health Care" width="625" height="168">
     </a>
 
     <nav class="nav" aria-label="Main">
@@ -186,7 +186,7 @@
 
 <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu" hidden>
   <div class="drawer__head">
-    <img src="assets/img/logo.webp?v=1790988308" alt="" width="625" height="168">
+    <img src="assets/img/logo.webp?v=1791241736" alt="" width="625" height="168">
     <button type="button" class="icon-btn icon-btn--menu" id="menu-close">
       <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
       <span class="visually-hidden">Close menu</span>
@@ -255,42 +255,44 @@
       </div>
 
       <div>
-        <form class="form" id="care-form" data-form data-success="form-success" novalidate>
+        <form class="form" id="care-form" data-form data-success="form-success" action="/api/submit" method="post" enctype="multipart/form-data" novalidate>
           <input type="hidden" name="form_name" value="contact">
-          <input type="hidden" name="service" value="">
 
           <fieldset class="fieldset">
             <legend>What can we help with? <span class="req" aria-hidden="true">*</span></legend>
             <div class="segmented">
               <label>
-                <input type="radio" name="topic" value="Requesting care" required checked>
+                <input type="radio" name="topic" value="care" required checked>
                 <span>Requesting care</span>
               </label>
               <label>
-                <input type="radio" name="topic" value="Referring a client" required>
+                <input type="radio" name="topic" value="referral" required>
                 <span>Referring a client</span>
               </label>
               <label>
-                <input type="radio" name="topic" value="Applying for a job" required>
-                <span>Applying for a job</span>
+                <input type="radio" name="topic" value="general" required>
+                <span>A general question</span>
               </label>
             </div>
-            <p class="hint" id="jobs-hint" hidden>
-              Job applications go through our full application form.
-              <a href="careers.html#apply">Go to the careers page and apply</a> &mdash; it takes about five minutes.
-</p>
+            <p class="hint">Looking for work? <a href="careers.html#apply">Apply on our careers page</a>.</p>
           </fieldset>
 
           <div class="field">
-            <label for="name">Your name <span class="req" aria-hidden="true">*</span></label>
-            <input type="text" id="name" name="name" autocomplete="name" required aria-describedby="name-error">
+            <label for="name"><span data-show="care general">Your name</span><span data-show="referral" hidden>Your name (the person referring)</span> <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="name" name="name" autocomplete="name" required maxlength="120" aria-describedby="name-error">
             <p class="error" id="name-error" aria-live="polite"></p>
           </div>
 
-          <div class="field">
-            <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
-            <input type="email" id="email" name="email" autocomplete="email" required aria-describedby="email-error">
-            <p class="error" id="email-error" aria-live="polite"></p>
+          <div class="form-grid form-grid--2" data-show="referral" hidden>
+            <div class="field">
+              <label for="organization">Organization <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id="organization" name="organization" autocomplete="organization" required maxlength="160" aria-describedby="organization-error">
+              <p class="error" id="organization-error" aria-live="polite"></p>
+            </div>
+            <div class="field">
+              <label for="role">Your role</label>
+              <input type="text" id="role" name="role" autocomplete="organization-title" maxlength="120" placeholder="e.g. Case manager">
+            </div>
           </div>
 
           <div class="field">
@@ -299,7 +301,13 @@
             <p class="error" id="phone-error" aria-live="polite"></p>
           </div>
 
-          <fieldset class="fieldset">
+          <div class="field">
+            <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
+            <input type="email" id="email" name="email" autocomplete="email" required aria-describedby="email-error">
+            <p class="error" id="email-error" aria-live="polite"></p>
+          </div>
+
+          <fieldset class="fieldset" data-show="care">
             <legend>How would you like us to reach you?</legend>
             <div class="radio-row">
               <label><input type="radio" name="contact_method" value="Call" checked> Call</label>
@@ -308,17 +316,40 @@
             </div>
           </fieldset>
 
-          <div class="field">
-            <label for="message">Message</label>
-            <textarea id="message" name="message" rows="5" aria-describedby="message-hint"></textarea>
-            <p class="hint" id="message-hint">Tell us who needs care, what kind of help you&rsquo;re looking for, and anything else we should know.</p>
+          <div class="field" data-show="care">
+            <label for="service">Service you need <span class="req" aria-hidden="true">*</span></label>
+            <select id="service" name="service" required aria-describedby="service-error">
+              <option value="">Choose a service</option>
+                <option>Skilled Nursing</option>
+                <option>Private Duty Nursing</option>
+                <option>Homemaking</option>
+                <option>Respite Care</option>
+                <option>Companionship</option>
+                <option>24-Hour Emergency Support</option>
+                <option>Community First Services and Supports (CFSS)</option>
+                <option>Not sure yet</option>
+            </select>
+            <p class="error" id="service-error" aria-live="polite"></p>
           </div>
 
           <div class="field">
-            <label for="files">Attach files</label>
-            <input type="file" id="files" name="files" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.heic" aria-describedby="files-hint">
-            <p class="hint" id="files-hint">Up to 10 MB each, and you can remove any file before sending. Case managers: referral paperwork, assessments, and authorizations are welcome here.</p>
+            <label for="message">Message <span class="req" aria-hidden="true" data-show="general" hidden>*</span></label>
+            <textarea id="message" name="message" rows="5" maxlength="5000" aria-describedby="message-error message-hint" data-required-for="general"></textarea>
+            <p class="error" id="message-error" aria-live="polite"></p>
+            <p class="hint" id="message-hint"><span data-show="care">Tell us who needs care and anything else we should know.</span><span data-show="referral" hidden>Tell us about the client and the help they need.</span><span data-show="general" hidden>How can we help?</span></p>
           </div>
+
+          <div class="field" data-show="referral" hidden>
+            <label for="files">Attach referral documents</label>
+            <input type="file" id="files" name="files" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.heic" aria-describedby="files-hint">
+            <p class="hint" id="files-hint">Referral paperwork, assessments, or authorizations. Up to 5 files, 10 MB each.</p>
+          </div>
+
+          <div class="hp" aria-hidden="true">
+            <label for="care-website">Leave this field empty</label>
+            <input type="text" id="care-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="turnstile" data-turnstile></div>
 
           <p class="error" data-form-error aria-live="assertive"></p>
 
@@ -440,7 +471,7 @@
 
       <div class="footer__brand">
         <h2 class="visually-hidden">Maxx Home Healthcare</h2>
-        <img src="assets/img/logo-cream.webp?v=1790988308" alt="Maxx Home Health Care" width="625" height="168">
+        <img src="assets/img/logo-cream.webp?v=1791241736" alt="Maxx Home Health Care" width="625" height="168">
         <p class="footer__tagline">Helping you maintain your independence and dignity at home.</p>
       </div>
 
@@ -524,6 +555,6 @@
   </div>
 </div>
 
-<script src="assets/js/main.js?v=1790988308" defer></script>
+<script src="assets/js/main.js?v=1791241736" defer></script>
 </body>
 </html>

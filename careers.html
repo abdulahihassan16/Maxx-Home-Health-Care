@@ -38,7 +38,7 @@
 }());
 </script>
 
-<link rel="stylesheet" href="assets/css/style.css?v=1790988308">
+<link rel="stylesheet" href="assets/css/style.css?v=1791241736">
 
 <script type="application/ld+json">
 {
@@ -111,7 +111,7 @@
   <div class="shell header__inner">
 
     <a class="brand" href="index.html" aria-label="Maxx Home Healthcare, home page">
-      <img src="assets/img/logo.webp?v=1790988308" alt="Maxx Home Health Care" width="625" height="168">
+      <img src="assets/img/logo.webp?v=1791241736" alt="Maxx Home Health Care" width="625" height="168">
     </a>
 
     <nav class="nav" aria-label="Main">
@@ -164,7 +164,7 @@
 
 <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Site menu" hidden>
   <div class="drawer__head">
-    <img src="assets/img/logo.webp?v=1790988308" alt="" width="625" height="168">
+    <img src="assets/img/logo.webp?v=1791241736" alt="" width="625" height="168">
     <button type="button" class="icon-btn icon-btn--menu" id="menu-close">
       <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
       <span class="visually-hidden">Close menu</span>
@@ -296,7 +296,7 @@
       </div>
 
       <div>
-        <form class="form" id="careers-form" data-form data-success="careers-success" novalidate>
+        <form class="form" id="careers-form" data-form data-success="careers-success" action="/api/submit" method="post" enctype="multipart/form-data" novalidate>
           <input type="hidden" name="form_name" value="careers">
 
           <div class="field">
@@ -416,6 +416,12 @@
             <p class="error" id="consent-error" aria-live="polite"></p>
           </div>
 
+          <div class="hp" aria-hidden="true">
+            <label for="careers-website">Leave this field empty</label>
+            <input type="text" id="careers-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="turnstile" data-turnstile></div>
+
           <p class="error" data-form-error aria-live="assertive"></p>
 
           <button type="submit" class="btn btn--primary btn--wide">
@@ -453,7 +459,7 @@
 
       <div class="footer__brand">
         <h2 class="visually-hidden">Maxx Home Healthcare</h2>
-        <img src="assets/img/logo-cream.webp?v=1790988308" alt="Maxx Home Health Care" width="625" height="168">
+        <img src="assets/img/logo-cream.webp?v=1791241736" alt="Maxx Home Health Care" width="625" height="168">
         <p class="footer__tagline">Helping you maintain your independence and dignity at home.</p>
       </div>
 
@@ -537,6 +543,6 @@
   </div>
 </div>
 
-<script src="assets/js/main.js?v=1790988308" defer></script>
+<script src="assets/js/main.js?v=1791241736" defer></script>
 </body>
 </html>

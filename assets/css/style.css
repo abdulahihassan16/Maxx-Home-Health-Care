@@ -3747,3 +3747,17 @@ blockquote.pull--center::before {
     font-size: 1.0625rem;
   }
 }
+
+/* Spam trap: out of sight and out of the tab order; people never fill it. */
+.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Turnstile only shows itself when it needs the visitor to click. */
+.turnstile:empty {
+  display: none;
+}
