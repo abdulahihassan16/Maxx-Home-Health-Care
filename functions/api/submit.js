@@ -7,7 +7,7 @@
 //   RESEND_API_KEY        secret   Resend API key
 //   TURNSTILE_SECRET_KEY  secret   Turnstile widget secret
 //   MAIL_TO               plain    maxxhomehealthcare@gmail.com
-//   MAIL_FROM             plain    Maxx Home Health Care Website <website@maxxhomehealthcarellc.com>
+//   MAIL_FROM             plain    Maxx Home Health Care Website <hello@maxxhomehealthcarellc.com>
 //   SITE_URL              plain    https://maxxhomehealthcarellc.com (absolute logo URL in emails)
 // Bindings:
 //   RATE_LIMIT            KV namespace used for per-address submission counts

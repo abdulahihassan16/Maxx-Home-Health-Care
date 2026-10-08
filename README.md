@@ -217,7 +217,7 @@ Every one is flagged on the page in amber. Do not publish an unverified claim.
 Every form posts to a Cloudflare Pages Function (`functions/api/submit.js`).
 It checks the submission, then emails it to the office through **Resend**:
 
-- **From** `Maxx Home Health Care Website <website@maxxhomehealthcarellc.com>`
+- **From** `Maxx Home Health Care Website <hello@maxxhomehealthcarellc.com>`
 - **To** `maxxhomehealthcare@gmail.com`
 - **Reply-To** the person who filled in the form, so hitting Reply in Gmail answers them.
 
@@ -240,7 +240,7 @@ Templates: `functions/_shared/email.js`. Field rules: `functions/_shared/forms.j
 **1. Resend.** Create an account, add the domain `maxxhomehealthcarellc.com`
 (US region), and create an API key with "Sending access".
 
-**2. DNS at GoDaddy** (the domain's DNS lives at GoDaddy, ns71/ns72.domaincontrol.com).
+**2. DNS at Cloudflare** (the domain moved from GoDaddy to Cloudflare nameservers in October 2026; Resend records added there).
 Add exactly what Resend's domain page shows. For the US region that is:
 
 | Type | Name (host) | Value | Priority |
@@ -275,7 +275,7 @@ KV namespace, variable name `RATE_LIMIT`.
 | `RESEND_API_KEY` | Secret | the Resend API key |
 | `TURNSTILE_SECRET_KEY` | Secret | the Turnstile secret |
 | `MAIL_TO` | Text | `maxxhomehealthcare@gmail.com` |
-| `MAIL_FROM` | Text | `Maxx Home Health Care Website <website@maxxhomehealthcarellc.com>` |
+| `MAIL_FROM` | Text | `Maxx Home Health Care Website <hello@maxxhomehealthcarellc.com>` |
 | `SITE_URL` | Text | the live address, e.g. `https://maxxhomehealthcarellc.com` (the email logo loads from here) |
 
 **6. Redeploy** (any push to `main`), then send one test of each form.
