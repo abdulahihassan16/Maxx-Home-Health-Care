@@ -4,13 +4,13 @@
 // -> send. A success response is only returned after Resend accepts the email.
 //
 // Environment (Cloudflare Pages > Settings > Variables and Secrets):
-//   RESEND_API_KEY        secret   Resend API key
-//   TURNSTILE_SECRET_KEY  secret   Turnstile widget secret
-//   MAIL_TO               plain    maxxhomehealthcare@gmail.com
-//   MAIL_FROM             plain    Maxx Home Health Care Website <hello@maxxhomehealthcarellc.com>
-//   SITE_URL              plain    https://maxxhomehealthcarellc.com (absolute logo URL in emails)
+//   RESEND_API_KEY        secret   Resend API key (required)
+//   TURNSTILE_SECRET_KEY  secret   Turnstile widget secret (spam check is on once set)
+//   MAIL_TO               plain    defaults to maxxhomehealthcare@gmail.com
+//   MAIL_FROM             plain    defaults to Maxx Home Health Care Website <hello@maxxhomehealthcarellc.com>
+//   SITE_URL              plain    defaults to the address the form was sent from (logo URL in emails)
 // Bindings:
-//   RATE_LIMIT            KV namespace used for per-address submission counts
+//   RATE_LIMIT            KV namespace for per-address submission counts (limit is on once bound)
 // Optional, for local testing only:
 //   RESEND_API_URL        defaults to https://api.resend.com/emails
 
@@ -66,10 +66,10 @@ async function turnstileOk(secret, token, ip) {
 }
 
 export async function onRequestPost({ request, env }) {
-  for (const name of ['RESEND_API_KEY', 'TURNSTILE_SECRET_KEY', 'MAIL_TO', 'MAIL_FROM', 'SITE_URL']) {
-    if (!env[name]) { console.error(`submit: missing environment variable ${name}`); return sorry(500); }
-  }
-  if (!env.RATE_LIMIT) { console.error('submit: missing RATE_LIMIT KV binding'); return sorry(500); }
+  if (!env.RESEND_API_KEY) { console.error('submit: missing environment variable RESEND_API_KEY'); return sorry(500); }
+  const mailTo = env.MAIL_TO || 'maxxhomehealthcare@gmail.com';
+  const mailFrom = env.MAIL_FROM || 'Maxx Home Health Care Website <hello@maxxhomehealthcarellc.com>';
+  const siteUrl = env.SITE_URL || new URL(request.url).origin;
 
   const length = Number(request.headers.get('content-length') || 0);
   if (length > MAX_BODY_BYTES) {
@@ -87,11 +87,11 @@ export async function onRequestPost({ request, env }) {
   if (String(data.get('website') || '').trim()) return sorry(400);
 
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  if (await overLimit(env.RATE_LIMIT, ip)) {
+  if (env.RATE_LIMIT && await overLimit(env.RATE_LIMIT, ip)) {
     return json(429, { ok: false, error: `You've sent several messages in a short time. Please wait a few minutes, or call us at ${PHONE}.` });
   }
 
-  if (!(await turnstileOk(env.TURNSTILE_SECRET_KEY, String(data.get('cf-turnstile-response') || ''), ip))) {
+  if (env.TURNSTILE_SECRET_KEY && !(await turnstileOk(env.TURNSTILE_SECRET_KEY, String(data.get('cf-turnstile-response') || ''), ip))) {
     return json(403, { ok: false, error: `We couldn't confirm you're not a robot. Please reload the page and try again, or call us at ${PHONE}.` });
   }
 
@@ -103,7 +103,7 @@ export async function onRequestPost({ request, env }) {
     return json(422, { ok: false, error: 'Please check the highlighted fields.', fields: errors });
   }
 
-  const email = buildEmail(type, values, { submittedAt: new Date(), siteUrl: env.SITE_URL });
+  const email = buildEmail(type, values, { submittedAt: new Date(), siteUrl });
 
   const attachments = [];
   for (const { file } of files) {
@@ -116,8 +116,8 @@ export async function onRequestPost({ request, env }) {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: env.MAIL_FROM,
-        to: [env.MAIL_TO],
+        from: mailFrom,
+        to: [mailTo],
         reply_to: values.email,
         subject: email.subject,
         html: email.html,

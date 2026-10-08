@@ -928,10 +928,12 @@
         if (widget && window.turnstile) window.turnstile.reset(widget);
       }
 
-      getToken().then(function (t) {
-        if (!t) { fail(); return null; }
+      /* No site key yet: send without the spam check (the server skips it too
+         until its secret is set). */
+      (TURNSTILE_SITE_KEY ? getToken() : Promise.resolve(null)).then(function (t) {
+        if (TURNSTILE_SITE_KEY && !t) { fail(); return null; }
         var body = new FormData(form);
-        body.set('cf-turnstile-response', t);
+        if (t) body.set('cf-turnstile-response', t);
         return window.fetch(FORM_ENDPOINT, {
           method: 'POST',
           body: body,
