@@ -18,7 +18,7 @@
      (the matching secret is set on the server, never here).
      ------------------------------------------------------------------------ */
   var FORM_ENDPOINT = '/api/submit';
-  var TURNSTILE_SITE_KEY = window.MAXX_TURNSTILE_SITE_KEY || '';
+  var TURNSTILE_SITE_KEY = window.MAXX_TURNSTILE_SITE_KEY || '0x4AAAAAAFQ2l0Hok5-_Vh4G';
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) {
