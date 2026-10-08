@@ -1,7 +1,8 @@
 // POST /api/submit — every form on the site posts here.
 //
 // Order of checks: size -> honeypot -> rate limit -> Turnstile -> validation
-// -> send. A success response is only returned after Resend accepts the email.
+// -> send to the office -> thank-you note to the visitor. A success response is
+// only returned after Resend accepts the office email.
 //
 // Environment (Cloudflare Pages > Settings > Variables and Secrets):
 //   RESEND_API_KEY        secret   Resend API key (required)
@@ -15,7 +16,7 @@
 //   RESEND_API_URL        defaults to https://api.resend.com/emails
 
 import { formType, validate } from '../_shared/forms.js';
-import { buildEmail } from '../_shared/email.js';
+import { buildEmail, buildConfirmation } from '../_shared/email.js';
 
 const PHONE = '507-884-8277';
 const RATE_WINDOW_SECONDS = 600;
@@ -133,6 +134,20 @@ export async function onRequestPost({ request, env }) {
   if (!res.ok) {
     console.error('submit: Resend rejected the email', res.status, await res.text().catch(() => ''));
     return sorry(502);
+  }
+
+  // The office has the message, so the visitor's thank-you note is a bonus:
+  // if it fails, the submission still counts as sent.
+  try {
+    const note = buildConfirmation(type, values, { siteUrl });
+    const sent = await fetch(env.RESEND_API_URL || 'https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: mailFrom, to: [values.email], reply_to: mailTo, subject: note.subject, html: note.html, text: note.text }),
+    });
+    if (!sent.ok) console.error('submit: confirmation rejected', sent.status, await sent.text().catch(() => ''));
+  } catch (err) {
+    console.error('submit: confirmation failed', err);
   }
 
   return json(200, { ok: true });

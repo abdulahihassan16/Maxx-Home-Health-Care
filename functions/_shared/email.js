@@ -208,3 +208,102 @@ export function buildEmail(type, v, { submittedAt, siteUrl }) {
 
   return { subject, html, text: textLines.join('\n') };
 }
+
+// Confirmation sent to the person who filled in the form. Deliberately short
+// and generic: it never repeats what they typed, so the form cannot be used
+// to send someone else's words to a stranger.
+const CONFIRM = {
+  care: {
+    subject: 'We received your care request',
+    lines: [
+      'Thank you for reaching out to Maxx Home Health Care. We received your care request, and a member of our team will be in touch with you soon.',
+    ],
+  },
+  referral: {
+    subject: 'Thank you for your referral',
+    lines: [
+      'Thank you for referring a client to Maxx Home Health Care. We received your referral and will follow up with you soon.',
+    ],
+  },
+  job: {
+    subject: 'Thank you for applying',
+    lines: [
+      'Thank you for applying to join the Maxx Home Health Care team. We received your application and will review it carefully.',
+      'If your experience is a good fit, we will contact you to talk about next steps.',
+    ],
+  },
+  general: {
+    subject: 'We received your message',
+    lines: [
+      'Thank you for contacting Maxx Home Health Care. We received your message and will get back to you soon.',
+    ],
+  },
+};
+
+export function buildConfirmation(type, v, { siteUrl }) {
+  const c = CONFIRM[type];
+  const raw = oneLine(v.name).split(' ')[0].slice(0, 40);
+  const firstName = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const logo = siteUrl.replace(/\/$/, '') + '/assets/img/logo.png';
+  const hours = 'Monday to Friday, 9:00 AM to 5:00 PM';
+  const para = (s) => `<p style="margin:0 0 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;color:${INK};">${s}</p>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<title>${esc(c.subject)}</title>
+<style>
+  @media only screen and (max-width: 520px) {
+    .pad { padding-left: 20px !important; padding-right: 20px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:${PAPER};">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Thank you, ${esc(firstName)}. We will be in touch soon.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${PAPER};">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#FFFFFF;border:1px solid ${RULE};border-radius:14px;overflow:hidden;">
+        <tr>
+          <td style="padding:22px 32px 18px;background:${PAPER};" class="pad">
+            <img src="${esc(logo)}" width="150" alt="Maxx Home Health Care" style="display:block;width:150px;height:auto;border:0;">
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 32px 14px;" class="pad">
+            <h1 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:34px;font-weight:700;color:${INK};">Hi ${esc(firstName)},</h1>
+            ${c.lines.map((l) => para(esc(l))).join('\n            ')}
+            ${para(`If you need anything in the meantime, please call <a href="tel:+15078848277" style="color:${LEAF};font-weight:700;text-decoration:none;white-space:nowrap;">507-884-8277</a>, ${hours.replace(/ (AM|PM)/g, "&nbsp;$1")}.`)}
+            ${para(`Warm regards,<br><strong>The Maxx Home Health Care Team</strong>`)}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 26px;border-top:1px solid ${RULE};" class="pad">
+            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:${STONE};">You are receiving this email because you filled out a form on maxxhomehealthcarellc.com. If that was not you, you can ignore this message.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+
+  const text = [
+    `Hi ${firstName},`,
+    '',
+    ...c.lines.flatMap((l) => [l, '']),
+    `If you need anything in the meantime, please call 507-884-8277, ${hours}.`,
+    '',
+    'Warm regards,',
+    'The Maxx Home Health Care Team',
+    '',
+    '--',
+    'You are receiving this email because you filled out a form on maxxhomehealthcarellc.com. If that was not you, you can ignore this message.',
+  ].join('\n');
+
+  return { subject: c.subject, html, text };
+}
