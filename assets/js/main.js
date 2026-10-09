@@ -733,7 +733,7 @@
 
     var params = new URLSearchParams(window.location.search);
     var SERVICES = {
-      'skilled-nursing': 'Skilled Nursing',
+      'home-care-nursing': 'Home Care Nursing',
       'private-duty-nursing': 'Private Duty Nursing',
       'homemaking': 'Homemaking',
       'respite-care': 'Respite Care',

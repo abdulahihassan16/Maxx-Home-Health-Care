@@ -2,7 +2,7 @@
 // but nothing here trusts it: every field is re-checked before an email goes out.
 
 export const SERVICES = [
-  'Skilled Nursing',
+  'Home Care Nursing',
   'Private Duty Nursing',
   'Homemaking',
   'Respite Care',

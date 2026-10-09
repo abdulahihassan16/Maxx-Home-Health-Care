@@ -26,7 +26,7 @@ copy. Every CSS, JS and intro file is already versioned with `?v=`.
 ```
 index.html              Homepage: seven blocks, a preview that routes people.
 about.html              Story, how we work with you, team, screening, trust, reviews.
-services.html           One section per service (#skilled-nursing and so on).
+services.html           One section per service (#home-care-nursing and so on).
 cfss.html               CFSS explained, eligibility checklist, how to start.
 insurance.html          Every accepted program in plain language.
 careers.html            Benefits, open roles, how hiring works, application form.
